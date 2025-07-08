@@ -1,0 +1,15 @@
+# Python / Django
+*.pyc
+__pycache__/
+db.sqlite3
+.env
+
+# Node/npm (if any)
+node_modules/
+
+# VSCode or IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
