@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NiravnAi Assistant</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      display: flex;
+      font-family: Arial, sans-serif;
+      background-color: #101010;
+      color: #eee;
+      height: 100vh;
+    }
+    .sidebar {
+      width: 250px;
+      background: #181818;
+      border-right: 1px solid #333;
+      padding: 1rem;
+      display: none;
+      flex-direction: column;
+    }
+    .main {
+      flex-grow: 1;
+      display: none;
+      flex-direction: column;
+      padding: 1rem;
+    }
+    .chat-list {
+      flex-grow: 1;
+      overflow-y: auto;
+      margin-top: 1rem;
+    }
+    .chat-item {
+      background: #2a2a2a;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .chat-item:hover { background: #333; }
+    .messages {
+      flex-grow: 1;
+      overflow-y: auto;
+      margin-bottom: 1rem;
+    }
+    .bubble {
+      max-width: 80%;
+      padding: 0.75rem;
+      border-radius: 12px;
+      margin: 0.5rem 0;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .user { background: #1e90ff; align-self: flex-end; color: white; }
+    .assistant { background: #222; align-self: flex-start; }
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    textarea {
+      resize: none;
+      padding: 0.75rem;
+      border-radius: 8px;
+      border: none;
+      background: #222;
+      color: #eee;
+      width: 100%;
+    }
+    select, button {
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: none;
+      background-color: #1e1e1e;
+      color: #eee;
+    }
+    button {
+      background-color: #1e90ff;
+      cursor: pointer;
+    }
+    button:hover { background-color: #007acc; }
+    #authSection {
+      margin: auto;
+      text-align: center;
+    }
+    #authSection input {
+      display: block;
+      margin: 0.5rem auto;
+      padding: 0.5rem;
+      width: 200px;
+      background: #222;
+      color: #eee;
+      border: none;
+      border-radius: 6px;
+    }
+    .speak-btn {
+      background: none;
+      border: none;
+      font-size: 1.1rem;
+      color: #888;
+      margin-left: 0.4em;
+      cursor: pointer;
+      vertical-align: middle;
+      padding: 0;
+      outline: none;
+      transition: color 0.2s;
+    }
+    .speak-btn:hover {
+      color: #1e90ff;
+    }
+  </style>
+</head>
+<body>
+
+<div id="authSection">
+  <h2>NiravnAi Login</h2>
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+  <button onclick="register()">Register</button>
+</div>
+
+<div class="sidebar">
+  <h2>NiravnAi</h2>
+  <button onclick="startNewChat()">+ New Chat</button>
+  <div class="chat-list" id="chatList"></div>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<div class="main">
+  <div class="messages" id="messages"></div>
+  <div class="controls">
+    <select id="domain">
+      <option value="buddhist">Buddhism</option>
+    </select>
+    <select id="mode">
+      <option value="default">Default</option>
+      <option value="daily">Daily</option>
+      <option value="interpretation">Interpretation</option>
+      <option value="therapeutic">Therapeutic</option>
+      <option value="conversational">Conversational</option>
+    </select>
+    <textarea id="promptInput" rows="3" placeholder="Type your message..."></textarea>
+    <button onclick="sendMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+let token = localStorage.getItem("token");
+let chats = [];
+let activeChat = null;
+
+const chatListEl = document.getElementById("chatList");
+const messagesEl = document.getElementById("messages");
+const promptInput = document.getElementById("promptInput");
+
+if (token) {
+  showApp();
+  loadChats();
+}
+
+function showApp() {
+  document.getElementById("authSection").style.display = "none";
+  document.querySelector(".sidebar").style.display = "flex";
+  document.querySelector(".main").style.display = "flex";
+}
+
+async function login() {
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+  const res = await fetch("http://127.0.0.1:8000/api/auth/login/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password })
+  });
+  const data = await res.json();
+  if (res.ok) {
+    localStorage.setItem("token", data.access);
+    token = data.access;
+    showApp();
+    loadChats();
+  } else {
+    alert("Login failed");
+  }
+}
+
+async function register() {
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+  const res = await fetch("http://127.0.0.1:8000/api/auth/register/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password })
+  });
+  if (res.ok) alert("Registered! Now login.");
+  else alert("Register failed.");
+}
+
+function logout() {
+  localStorage.removeItem("token");
+  location.reload();
+}
+
+function renderChatList() {
+  chatListEl.innerHTML = "";
+  chats.forEach((chat, i) => {
+    const div = document.createElement("div");
+    div.className = "chat-item";
+    div.textContent = chat.title;
+    div.onclick = () => loadMessages(chat.id);
+    chatListEl.appendChild(div);
+  });
+}
+
+function speakAsMonk(text) {
+  if (!window.speechSynthesis) return;
+  const utter = new SpeechSynthesisUtterance(text);
+  let voices = window.speechSynthesis.getVoices();
+  // Only use English voices
+  voices = voices.filter(v => v.lang.toLowerCase().startsWith('en'));
+  // Try to pick a deep male English voice
+  let monkVoice = voices.find(v =>
+    (v.name.toLowerCase().includes('daniel') ||
+     v.name.toLowerCase().includes('google uk english male') ||
+     (v.gender && v.gender.toLowerCase() === 'male')) &&
+    v.lang.toLowerCase().includes('en')
+  );
+  if (!monkVoice) {
+    monkVoice = voices.find(v => v.lang.toLowerCase().includes('en') && v.name.toLowerCase().includes('male'));
+  }
+  if (!monkVoice && voices.length > 0) monkVoice = voices[0];
+  if (monkVoice) utter.voice = monkVoice;
+  utter.rate = 0.85;
+  utter.pitch = 0.8;
+  utter.volume = 1;
+  // Add a slight pause between sentences for a more human/monk-like effect
+  utter.text = text.replace(/([.?!])\s+/g, '$1 ... ');
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+}
+
+function renderMessages() {
+  messagesEl.innerHTML = "";
+  if (!activeChat?.messages) return;
+  activeChat.messages.forEach((msg, idx) => {
+    const div = document.createElement("div");
+    div.className = `bubble ${msg.role}`;
+    div.textContent = msg.content;
+    // Add speaker icon for assistant replies
+    if (msg.role === "assistant" && msg.content) {
+      const speakBtn = document.createElement("button");
+      speakBtn.className = "speak-btn";
+      speakBtn.title = "Speak this reply";
+      speakBtn.innerText = "🔊";
+      speakBtn.onclick = (e) => {
+        e.stopPropagation();
+        speakAsMonk(msg.content);
+      };
+      div.appendChild(speakBtn);
+    }
+    messagesEl.appendChild(div);
+  });
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+async function loadChats() {
+  const res = await fetch("http://127.0.0.1:8000/api/chats/", {
+    headers: { Authorization: "Bearer " + token }
+  });
+  chats = await res.json();
+  renderChatList();
+  if (chats.length > 0) {
+    await loadMessages(chats[0].id);
+  }
+}
+
+async function loadMessages(chatId) {
+  const res = await fetch(`http://127.0.0.1:8000/api/messages/?chat_id=${chatId}`, {
+    headers: { Authorization: "Bearer " + token }
+  });
+  const messages = await res.json();
+  activeChat = chats.find(c => c.id === chatId);
+  activeChat.messages = messages;
+  renderMessages();
+}
+
+async function startNewChat() {
+  const res = await fetch("http://127.0.0.1:8000/api/chats/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({ title: `Chat ${chats.length + 1}` })
+  });
+  const chat = await res.json();
+  chats.push({ ...chat, messages: [] });
+  activeChat = chats[chats.length - 1];
+  renderChatList();
+  renderMessages();
+}
+
+async function sendMessage() {
+  const prompt = promptInput.value.trim();
+  if (!prompt || !activeChat) return;
+
+  const domain = document.getElementById("domain").value;
+  const mode = document.getElementById("mode").value;
+
+  activeChat.messages.push({ role: "user", content: prompt });
+  renderMessages();
+  promptInput.value = "";
+
+  try {
+    const res = await fetch("http://127.0.0.1:8000/api/chat/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      },
+      body: JSON.stringify({ prompt, domain, mode, chat_id: activeChat.id })
+    });
+
+    const text = await res.text(); // safer than .json()
+    console.log("Raw server response:", text);
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (jsonErr) {
+      alert("Couldn't parse response from server:\n" + jsonErr.message);
+      return;
+    }
+
+    const reply = data.response || "No reply.";
+    activeChat.messages.push({ role: "assistant", content: "" });
+    renderMessages();
+
+    let bubble = messagesEl.lastChild;
+    let i = 0;
+    function typeChar() {
+      if (i < reply.length) {
+        bubble.textContent += reply[i++];
+        setTimeout(typeChar, 15);
+      } else {
+        // Update the message in memory so it persists after re-render
+        activeChat.messages[activeChat.messages.length - 1].content = reply;
+        renderMessages();
+      }
+    }
+    typeChar();
+  } catch (err) {
+    console.error("Network error:", err);
+    alert("Failed to send message:\n" + err.message);
+  }
+}
+
+</script>
+
+</body>
+</html>
