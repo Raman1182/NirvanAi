@@ -60,3 +60,78 @@
 ---
 
 > ✨ *With these features, NirvanAi can evolve into a fully-fledged spiritual LLM assistant, usable daily by seekers, students, and curious minds alike.*
+
+Here’s the markdown-only version of the **“how to clone and use”** section for your `README.md` — properly formatted for GitHub:
+
+````markdown
+## 🚀 Getting Started
+
+### 📦 Clone the Repository
+```bash
+git clone https://github.com/Raman1182/NirvanAi.git
+cd NirvanAi
+````
+
+---
+
+### ⚙️ Backend Setup (Django)
+
+1. Navigate to the backend folder:
+
+```bash
+cd backend
+```
+
+2. Create a virtual environment and activate it:
+
+```bash
+python -m venv venv
+source venv/bin/activate        # On Mac/Linux
+venv\Scripts\activate           # On Windows
+```
+
+3. Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+4. Apply migrations:
+
+```bash
+python manage.py migrate
+```
+
+5. Create a `.env` file and add your Gemini API key:
+
+```
+GEMINI_API_KEY=your-key-here
+```
+
+6. Start the development server:
+
+```bash
+python manage.py runserver
+```
+
+---
+
+### 🌐 Frontend Setup (Vanilla HTML/CSS/JS)
+
+1. Open the `frontend/index.html` file directly in your browser
+   **OR** deploy it using [Vercel](https://vercel.com) or [Netlify](https://netlify.com).
+
+2. **Important:**
+   If you deploy the frontend, make sure to update all instances of
+   `http://127.0.0.1:8000` in `index.html` with your Render backend URL, like:
+
+```
+https://nirvanai.onrender.com
+```
+
+---
+
+You're good to go 🎉
+Login/Register, start chatting, and let NirvanAi guide your journey 
+
+
