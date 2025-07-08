@@ -170,7 +170,7 @@ function showApp() {
 async function login() {
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
-  const res = await fetch("http://127.0.0.1:8000/api/auth/login/", {
+  const res = await fetch("https://nirvanai.onrender.com/api/auth/login/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password })
@@ -189,7 +189,7 @@ async function login() {
 async function register() {
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
-  const res = await fetch("http://127.0.0.1:8000/api/auth/register/", {
+  const res = await fetch("https://nirvanai.onrender.com/api/auth/register/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password })
@@ -266,7 +266,7 @@ function renderMessages() {
 }
 
 async function loadChats() {
-  const res = await fetch("http://127.0.0.1:8000/api/chats/", {
+  const res = await fetch("https://nirvanai.onrender.com/api/chats/", {
     headers: { Authorization: "Bearer " + token }
   });
   chats = await res.json();
@@ -277,7 +277,7 @@ async function loadChats() {
 }
 
 async function loadMessages(chatId) {
-  const res = await fetch(`http://127.0.0.1:8000/api/messages/?chat_id=${chatId}`, {
+  const res = await fetch(`https://nirvanai.onrender.com/api/messages/?chat_id=${chatId}`, {
     headers: { Authorization: "Bearer " + token }
   });
   const messages = await res.json();
@@ -287,7 +287,7 @@ async function loadMessages(chatId) {
 }
 
 async function startNewChat() {
-  const res = await fetch("http://127.0.0.1:8000/api/chats/", {
+  const res = await fetch("https://nirvanai.onrender.com/api/chats/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -314,7 +314,7 @@ async function sendMessage() {
   promptInput.value = "";
 
   try {
-    const res = await fetch("http://127.0.0.1:8000/api/chat/", {
+    const res = await fetch("https://nirvanai.onrender.com/api/chat/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
