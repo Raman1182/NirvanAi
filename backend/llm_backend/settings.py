@@ -7,9 +7,9 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'your-secret-key'  # Replace with an actual secret in production
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "unsafe-default-for-dev")
 DEBUG = True
-ALLOWED_HOSTS = ['*']  # Add ['*'] if you're testing from other devices
+ALLOWED_HOSTS = ['*'] 
 
 # ✅ INSTALLED APPS
 INSTALLED_APPS = [
